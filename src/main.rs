@@ -1,6 +1,10 @@
 use clap::{crate_version, App, Arg};
 use log::{error, info};
-use std::{fs::read, process};
+use std::{
+    fs::{create_dir_all, read, write},
+    path::Path,
+    process,
+};
 
 mod parser;
 mod scan;
@@ -57,6 +61,15 @@ fn main() {
         error!("Could not generate the manifest: {}", e);
         process::exit(1);
     }
-    println!("{}", json.unwrap());
+    info!("Writing manifest...");
+    let manifest_dir = Path::new(&root_path).join("manifest");
+    if let Err(e) = create_dir_all(&manifest_dir) {
+        error!("Could not create directory: {}", e);
+        process::exit(1);
+    }
+    if let Err(e) = write(manifest_dir.join("recipe.json"), json.unwrap()) {
+        error!("Could not write the manifest: {}", e);
+        process::exit(1);
+    }
     info!("Manifest generated successfully.");
 }

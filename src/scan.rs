@@ -66,10 +66,7 @@ pub fn calculate_decompressed_size<R: Read>(reader: R) -> Result<u64, Error> {
 
 pub fn collect_files<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>, Error> {
     let mut files = Vec::new();
-    for entry in WalkDir::new(root)
-        .contents_first(true)
-        .into_iter()
-    {
+    for entry in WalkDir::new(root).contents_first(true).into_iter() {
         if let Ok(entry) = entry {
             if !is_tarball(&entry) {
                 continue;

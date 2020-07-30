@@ -1,7 +1,7 @@
 use failure::Error;
+use log::warn;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
-use log::warn;
 
 // mirror manifests
 #[derive(Serialize, Deserialize)]
@@ -94,7 +94,13 @@ pub struct UserConfig {
 }
 
 impl Variant {
-    pub fn new(name: String, key: String, description: String, retro: bool, tarballs: Vec<Tarball>) -> Self {
+    pub fn new(
+        name: String,
+        key: String,
+        description: String,
+        retro: bool,
+        tarballs: Vec<Tarball>,
+    ) -> Self {
         Variant {
             name: name.clone(),
             retro,
