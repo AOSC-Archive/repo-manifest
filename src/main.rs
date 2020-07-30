@@ -1,5 +1,5 @@
 use clap::{crate_version, App, Arg};
-use log::{error, info};
+use log::{error, info, warn};
 use std::{
     fs::{create_dir_all, read, write},
     path::Path,
@@ -46,13 +46,22 @@ fn main() {
         error!("No tarball was found.");
         process::exit(1);
     }
-    info!("Scanning {} tarballs...", files.len());
-    let files = scan::scan_files(&files, &root_path);
-    if let Err(e) = files {
+    let previous_manifest_path = Path::new(&root_path).join("manifest/recipe.json");
+    let previous_manifest = read(previous_manifest_path);
+    let scanned;
+    if let Err(e) = previous_manifest {
+        warn!("Failed to read the previous manifest: {}", e);
+        warn!("Falling back to full scan!");
+        info!("Scanning {} tarballs...", files.len());
+        scanned = scan::scan_files(&files, &root_path);
+    } else {
+        scanned = scan::smart_scan_files(previous_manifest.unwrap(), files, &root_path);
+    }
+    if let Err(e) = scanned {
         error!("Could not scan the directory: {}", e);
         process::exit(1);
     }
-    let files = files.unwrap();
+    let files = scanned.unwrap();
     info!("Generating manifest...");
     let variants = parser::assemble_variants(&config_data, files);
     let manifest = parser::assemble_manifest(config_data, variants);

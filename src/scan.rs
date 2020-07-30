@@ -1,6 +1,6 @@
-use crate::parser::{get_splitted_name, Tarball};
+use crate::parser::{flatten_variants, get_splitted_name, parse_manifest, Tarball};
 use failure::{format_err, Error};
-use log::{error, info};
+use log::{error, info, warn};
 use parking_lot::Mutex;
 use rayon::prelude::*;
 use sha2::{Digest, Sha256};
@@ -78,6 +78,62 @@ pub fn collect_files<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>, Error> {
     }
 
     Ok(files)
+}
+
+pub fn increment_scan_files(
+    files: Vec<PathBuf>,
+    existing_files: Vec<Tarball>,
+    root_path: &str,
+) -> Result<Vec<Tarball>, Error> {
+    let root_path_buf = PathBuf::from(root_path);
+    let mut new_existing_files: Vec<Tarball> = Vec::new();
+    let mut new_files: Vec<PathBuf> = Vec::new();
+    new_existing_files.reserve(existing_files.len());
+    new_files.reserve(files.len());
+    for mut tarball in existing_files {
+        let path = root_path_buf.join(&tarball.path);
+        if files.contains(&path) {
+            if let Some(filename) = PathBuf::from(&tarball.path).file_name() {
+                if let Some(names) = get_splitted_name(&filename.to_string_lossy()) {
+                    tarball.variant = names.0;
+                    new_existing_files.push(tarball);
+                    continue;
+                }
+            }
+            warn!("Unable to determine the variant for {}", tarball.path);
+        }
+    }
+    for file in files {
+        if !new_existing_files
+            .iter()
+            .any(|t| root_path_buf.join(&t.path) == file)
+        {
+            new_files.push(file);
+        }
+    }
+    info!("Incrementally scanning {} tarballs...", new_files.len());
+    let diff_files = scan_files(&new_files, root_path)?;
+    new_existing_files.extend(diff_files);
+
+    Ok(new_existing_files)
+}
+
+pub fn smart_scan_files(
+    manifest: Vec<u8>,
+    files: Vec<PathBuf>,
+    root_path: &str,
+) -> Result<Vec<Tarball>, Error> {
+    let manifest = parse_manifest(&manifest);
+    if let Err(e) = manifest {
+        warn!("Failed to read the previous manifest: {}", e);
+        warn!("Falling back to full scan!");
+        info!("Scanning {} tarballs...", files.len());
+        return scan_files(&files, root_path);
+    }
+    let manifest = manifest.unwrap();
+    let existing_files = flatten_variants(manifest);
+
+    increment_scan_files(files, existing_files, root_path)
 }
 
 pub fn scan_files(files: &Vec<PathBuf>, root_path: &str) -> Result<Vec<Tarball>, Error> {

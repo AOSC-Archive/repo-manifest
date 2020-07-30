@@ -15,7 +15,7 @@ pub struct Mirror {
     url: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Tarball {
     pub arch: String,
     pub date: String,
@@ -114,6 +114,19 @@ impl Variant {
 #[inline]
 pub fn parse_config(data: &[u8]) -> Result<UserConfig, Error> {
     Ok(toml::from_slice(data)?)
+}
+
+pub fn parse_manifest(data: &[u8]) -> Result<Recipe, Error> {
+    Ok(serde_json::from_slice(data)?)
+}
+
+pub fn flatten_variants(recipe: Recipe) -> Vec<Tarball> {
+    let mut results = Vec::new();
+    for variant in recipe.variants {
+        results.extend(variant.tarballs);
+    }
+
+    results
 }
 
 pub fn get_root_path(config: &UserConfig) -> String {
