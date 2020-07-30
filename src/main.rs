@@ -31,7 +31,8 @@ fn main() {
     }
     let config_data = config_data.unwrap();
     info!("Preflight scanning...");
-    let files = scan::collect_files(parser::get_root_path(&config_data));
+    let root_path = parser::get_root_path(&config_data);
+    let files = scan::collect_files(&root_path);
     if let Err(e) = files {
         error!("Could not scan the directory: {}", e);
         process::exit(1);
@@ -41,5 +42,21 @@ fn main() {
         error!("No tarball was found.");
         process::exit(1);
     }
-    scan::scan_files(&files);
+    info!("Scanning {} tarballs...", files.len());
+    let files = scan::scan_files(&files, &root_path);
+    if let Err(e) = files {
+        error!("Could not scan the directory: {}", e);
+        process::exit(1);
+    }
+    let files = files.unwrap();
+    info!("Generating manifest...");
+    let variants = parser::assemble_variants(&config_data, files);
+    let manifest = parser::assemble_manifest(config_data, variants);
+    let json = parser::generate_manifest(&manifest);
+    if let Err(e) = json {
+        error!("Could not generate the manifest: {}", e);
+        process::exit(1);
+    }
+    println!("{}", json.unwrap());
+    info!("Manifest generated successfully.");
 }
