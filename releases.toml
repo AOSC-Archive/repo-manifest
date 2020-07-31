@@ -1,5 +1,5 @@
 [config]
-path = "/aosc-os"
+path = "/mirror/aosc-os"
 retro_arches = ["armel", "armhf", "i486", "powerpc", "ppc64"]
 
 [bulletin]
@@ -8,41 +8,6 @@ title = "Thank You for Choosing AOSC OS"
 title-tr = "bulletin-intro"
 body = "AOSC OS strives to simplify your user experience and improve your day-to-day productivity."
 body-tr = "bulletin-intro-body"
-
-[bulletin]
-type = "info"
-title = "Simplified"
-title-tr = "bulletin-simplified"
-body = "AOSC OS simplifies system management and maintenance by leaving packages largely unsplit."
-body-tr = "bulletin-simplified-body"
-
-[bulletin]
-type = "info"
-title = "Localized"
-title-tr = "bulletin-localized"
-body = "AOSC OS embraces multilingual support, and works hard to implement equal functionality across supported languages."
-body-tr = "bulletin-localized-body"
-
-[bulletin]
-type = "none"
-title = "Permissive"
-title-tr = "bulletin-permissive"
-body = "AOSC OS promises you your freedom to choose free or proprietary software."
-body-tr = "bulletin-permissive-body"
-
-[bulletin]
-type = "none"
-title = "Sustainable"
-title-tr = "bulletin-sustainable"
-body = "AOSC OS provides long-term support for aging hardware."
-body-tr = "bulletin-sustainable-body"
-
-[bulletin]
-type = "none"
-title = "Refined"
-title-tr = "bulletin-refined"
-body = "AOSC OS retains vanilla experience for most software, providing minor improvements where needed."
-body-tr = "bulletin-refined-body"
 
 [[mirrors]]
 name = "Tencent OSS Mirror"
@@ -163,6 +128,12 @@ name-tr = "base-name"
 description = "The Base variant provides a minimal set of features, just enough for you to get started. Base is still a pre-configured variant like other AOSC OS variants. Therefore, Base is suitable for performance constrained devices and servers."
 description-tr = "base-description"
 
+[distro.mainline.buildkit]
+name = "BuildKit"
+name-tr = "buildkit-name"
+description = "BuildKit is essentially a non-bootable AOSC OS Base with full development support. This particular variant of AOSC OS comes with Autobuild3 and other AOSC OS packaging and maintenance tools, so that you could quickly get started with AOSC OS development or building packages for personal use. BuildKit is also available as a Docker image."
+description-tr = "buildkit-description"
+
 [distro.retro.x11]
 name = "X11"
 name-tr = "retro-x11-name"
@@ -180,3 +151,9 @@ name = "Server"
 name-tr = "retro-server-name"
 description = "A base system release bundled with server applications, for performance and storage contraint servers and older development boards."
 description-tr = "retro-server-description"
+
+[distro.retro.buildkit]
+name = "BuildKit"
+name-tr = "buildkit-name"
+description = "BuildKit is essentially a non-bootable AOSC OS Base with full development support. This particular variant of AOSC OS comes with Autobuild3 and other AOSC OS packaging and maintenance tools, so that you could quickly get started with AOSC OS development or building packages for personal use. BuildKit is also available as a Docker image."
+description-tr = "buildkit-description"
