@@ -2,7 +2,7 @@
 # path to the directory containing the tarballs (in AOSC OS' case, it should be the directory that serves https://releases.aosc.io/)
 path = "/tmp/test/"
 # architecture that are considered to be retro
-retro_arches = ["armel","armhf", "i486"]
+retro_arches = ["armel", "armhf", "i486"]
 
 # bulletin and mirrors configurations should adhere to https://app.swaggerhub.com/apis-docs/liushuyu/DeployKit/1.0#/
 [bulletin]
