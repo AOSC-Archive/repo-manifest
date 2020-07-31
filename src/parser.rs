@@ -90,7 +90,7 @@ pub struct UserConfig {
     config: UserBasicConfig,
     bulletin: Bulletin,
     mirrors: Vec<Mirror>,
-    distro: UserDistroConfig,
+    pub distro: UserDistroConfig,
 }
 
 impl Variant {
@@ -102,7 +102,7 @@ impl Variant {
         tarballs: Vec<Tarball>,
     ) -> Self {
         Variant {
-            name: name.clone(),
+            name,
             retro,
             description,
             description_tr: format!("{}{}-description", key, if retro { "-retro" } else { "" }),
@@ -131,6 +131,10 @@ pub fn flatten_variants(recipe: Recipe) -> Vec<Tarball> {
 
 pub fn get_root_path(config: &UserConfig) -> String {
     config.config.path.clone()
+}
+
+pub fn get_retro_arches(config: &UserConfig) -> Vec<String> {
+    config.config.retro_arches.clone()
 }
 
 pub fn generate_manifest(manifest: &Recipe) -> Result<String, Error> {

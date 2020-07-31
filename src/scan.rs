@@ -1,4 +1,6 @@
-use crate::parser::{flatten_variants, get_splitted_name, parse_manifest, Tarball};
+use crate::parser::{
+    flatten_variants, get_retro_arches, get_splitted_name, parse_manifest, Tarball, UserConfig,
+};
 use failure::{format_err, Error};
 use log::{error, info, warn};
 use parking_lot::Mutex;
@@ -118,11 +120,45 @@ pub fn increment_scan_files(
     Ok(new_existing_files)
 }
 
+/// Filter all the files that do not exist in the configuration file
+pub fn filter_files(files: Vec<PathBuf>, config: &UserConfig) -> Vec<PathBuf> {
+    let mut filtered_files = Vec::new();
+    filtered_files.reserve(files.len());
+    let retro_arches = get_retro_arches(config);
+    for file in files {
+        if let Some(filename) = file.file_name() {
+            if let Some(names) = get_splitted_name(&filename.to_string_lossy()) {
+                if retro_arches.contains(&names.2) {
+                    if config.distro.retro.contains_key(&names.0) {
+                        filtered_files.push(file);
+                        continue;
+                    }
+                    warn!(
+                        "The variant `{} (retro)` is not in the config file.",
+                        names.0
+                    );
+                } else if config.distro.mainline.contains_key(&names.0) {
+                    filtered_files.push(file);
+                } else {
+                    warn!(
+                        "The variant `{} (mainline)` is not in the config file.",
+                        names.0
+                    );
+                }
+            }
+        }
+    }
+
+    filtered_files
+}
+
 pub fn smart_scan_files(
     manifest: Vec<u8>,
+    config: &UserConfig,
     files: Vec<PathBuf>,
     root_path: &str,
 ) -> Result<Vec<Tarball>, Error> {
+    let files = filter_files(files, config);
     let manifest = parse_manifest(&manifest);
     if let Err(e) = manifest {
         warn!("Failed to read the previous manifest: {}", e);
@@ -136,7 +172,7 @@ pub fn smart_scan_files(
     increment_scan_files(files, existing_files, root_path)
 }
 
-pub fn scan_files(files: &Vec<PathBuf>, root_path: &str) -> Result<Vec<Tarball>, Error> {
+pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>, Error> {
     let results: Vec<Tarball> = Vec::new();
     let results_shared = Arc::new(Mutex::new(results));
     files.par_iter().for_each(|p| {

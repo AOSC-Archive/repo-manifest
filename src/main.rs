@@ -42,7 +42,7 @@ fn main() {
         process::exit(1);
     }
     let files = files.unwrap();
-    if files.len() < 1 {
+    if files.is_empty() {
         error!("No tarball was found.");
         process::exit(1);
     }
@@ -53,9 +53,10 @@ fn main() {
         warn!("Failed to read the previous manifest: {}", e);
         warn!("Falling back to full scan!");
         info!("Scanning {} tarballs...", files.len());
-        scanned = scan::scan_files(&files, &root_path);
+        scanned = scan::scan_files(&scan::filter_files(files, &config_data), &root_path);
     } else {
-        scanned = scan::smart_scan_files(previous_manifest.unwrap(), files, &root_path);
+        scanned =
+            scan::smart_scan_files(previous_manifest.unwrap(), &config_data, files, &root_path);
     }
     if let Err(e) = scanned {
         error!("Could not scan the directory: {}", e);
