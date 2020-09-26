@@ -1,4 +1,4 @@
-use failure::Error;
+use anyhow::Result;
 use log::warn;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -112,11 +112,11 @@ impl Variant {
 }
 
 #[inline]
-pub fn parse_config(data: &[u8]) -> Result<UserConfig, Error> {
+pub fn parse_config(data: &[u8]) -> Result<UserConfig> {
     Ok(toml::from_slice(data)?)
 }
 
-pub fn parse_manifest(data: &[u8]) -> Result<Recipe, Error> {
+pub fn parse_manifest(data: &[u8]) -> Result<Recipe> {
     Ok(serde_json::from_slice(data)?)
 }
 
@@ -137,7 +137,7 @@ pub fn get_retro_arches(config: &UserConfig) -> Vec<String> {
     config.config.retro_arches.clone()
 }
 
-pub fn generate_manifest(manifest: &Recipe) -> Result<String, Error> {
+pub fn generate_manifest(manifest: &Recipe) -> Result<String> {
     Ok(serde_json::to_string(manifest)?)
 }
 

@@ -1,7 +1,7 @@
 use crate::parser::{
     flatten_variants, get_retro_arches, get_splitted_name, parse_manifest, Tarball, UserConfig,
 };
-use failure::{format_err, Error};
+use anyhow::{anyhow, Result};
 use log::{error, info, warn};
 use parking_lot::Mutex;
 use rayon::prelude::*;
@@ -45,7 +45,7 @@ fn is_tarball(entry: &DirEntry) -> bool {
 }
 
 /// Calculate the Sha256 checksum of the given stream
-pub fn sha256sum<R: Read>(mut reader: R) -> Result<String, Error> {
+pub fn sha256sum<R: Read>(mut reader: R) -> Result<String> {
     let mut hasher = Sha256::new();
     std::io::copy(&mut reader, &mut hasher)?;
 
@@ -53,7 +53,7 @@ pub fn sha256sum<R: Read>(mut reader: R) -> Result<String, Error> {
 }
 
 /// Calculate the decompressed size of the given tarball
-pub fn calculate_decompressed_size<R: Read>(reader: R) -> Result<u64, Error> {
+pub fn calculate_decompressed_size<R: Read>(reader: R) -> Result<u64> {
     let mut buffer = [0u8; 4096];
     let mut decompress = XzDecoder::new(reader);
     loop {
@@ -66,7 +66,7 @@ pub fn calculate_decompressed_size<R: Read>(reader: R) -> Result<u64, Error> {
     Ok(decompress.total_out())
 }
 
-pub fn collect_files<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>, Error> {
+pub fn collect_files<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     for entry in WalkDir::new(root).contents_first(true).into_iter() {
         if let Ok(entry) = entry {
@@ -86,7 +86,7 @@ pub fn increment_scan_files(
     files: Vec<PathBuf>,
     existing_files: Vec<Tarball>,
     root_path: &str,
-) -> Result<Vec<Tarball>, Error> {
+) -> Result<Vec<Tarball>> {
     let root_path_buf = PathBuf::from(root_path);
     let mut new_existing_files: Vec<Tarball> = Vec::new();
     let mut new_files: Vec<PathBuf> = Vec::new();
@@ -157,7 +157,7 @@ pub fn smart_scan_files(
     config: &UserConfig,
     files: Vec<PathBuf>,
     root_path: &str,
-) -> Result<Vec<Tarball>, Error> {
+) -> Result<Vec<Tarball>> {
     let files = filter_files(files, config);
     let manifest = parse_manifest(&manifest);
     if let Err(e) = manifest {
@@ -172,7 +172,7 @@ pub fn smart_scan_files(
     increment_scan_files(files, existing_files, root_path)
 }
 
-pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>, Error> {
+pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>> {
     let results: Vec<Tarball> = Vec::new();
     let results_shared = Arc::new(Mutex::new(results));
     files.par_iter().for_each(|p| {
@@ -187,13 +187,13 @@ pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>, Er
             "Could not determine filename {}: {}",
             p.display(),
             path.file_name()
-                .ok_or_else(|| format_err!("None value found"))
+                .ok_or_else(|| anyhow!("None value found"))
         );
         let names = unwrap_or_show_error!(
             "Could not parse the filename {}: {}",
             p.display(),
             get_splitted_name(&filename.to_string_lossy())
-                .ok_or_else(|| format_err!("None value found"))
+                .ok_or_else(|| anyhow!("None value found"))
         );
         let mut f = unwrap_or_show_error!("Could not open {}: {}", p.display(), File::open(p));
         let real_size = unwrap_or_show_error!(
