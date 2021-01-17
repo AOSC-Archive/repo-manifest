@@ -186,8 +186,7 @@ pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>> {
         let filename = unwrap_or_show_error!(
             "Could not determine filename {}: {}",
             p.display(),
-            path.file_name()
-                .ok_or_else(|| anyhow!("None value found"))
+            path.file_name().ok_or_else(|| anyhow!("None value found"))
         );
         let names = unwrap_or_show_error!(
             "Could not parse the filename {}: {}",
