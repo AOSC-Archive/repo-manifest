@@ -64,7 +64,7 @@ fn main() {
     info!("Manifest generated successfully.");
 }
 
-fn scan_images(root_path: &String) -> Result<String> {
+fn scan_images(root_path: &str) -> Result<String> {
     let files = scan::collect_iso(root_path)?;
     if files.is_empty() {
         return Err(anyhow!("No image was found."));
@@ -87,7 +87,7 @@ fn scan_images(root_path: &String) -> Result<String> {
     Ok(serde_json::to_string(&scanned)?)
 }
 
-fn scan_tarballs(root_path: &String, config_data: parser::UserConfig) -> Result<String> {
+fn scan_tarballs(root_path: &str, config_data: parser::UserConfig) -> Result<String> {
     let files = scan::collect_tarballs(root_path)?;
     if files.is_empty() {
         return Err(anyhow!("No tarball was found."));
