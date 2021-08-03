@@ -78,7 +78,8 @@ fn scan_images(root_path: &String) -> Result<String> {
         info!("Scanning {} images...", files.len());
         scanned = scan::scan_files(&files, root_path, true)?;
     } else {
-        let existing_files: Vec<parser::Tarball> = serde_json::from_slice(previous_manifest.as_ref().unwrap())?;
+        let existing_files: Vec<parser::Tarball> =
+            serde_json::from_slice(previous_manifest.as_ref().unwrap())?;
         scanned = scan::increment_scan_files(files, existing_files, root_path, true)?;
     }
     info!("Generating manifest...");

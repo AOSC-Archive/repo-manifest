@@ -75,7 +75,10 @@ pub fn calculate_decompressed_size<R: Read>(reader: R) -> Result<u64> {
     Ok(decompress.total_out())
 }
 
-fn collect_files<P: AsRef<Path>, F: Fn(&DirEntry) -> bool>(root: P, filter: F) -> Result<Vec<PathBuf>> {
+fn collect_files<P: AsRef<Path>, F: Fn(&DirEntry) -> bool>(
+    root: P,
+    filter: F,
+) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     for entry in WalkDir::new(root).into_iter() {
         if let Ok(entry) = entry {
@@ -217,7 +220,8 @@ pub fn scan_files(files: &[PathBuf], root_path: &str, raw: bool) -> Result<Vec<T
             "Could not read as xz stream {}: {}",
             p.display(),
             if raw {
-                Ok(0)
+                f.seek(SeekFrom::End(0))
+                    .map_err(|e| anyhow!("Could not seek {}", e))
             } else {
                 calculate_decompressed_size(&f)
             }
