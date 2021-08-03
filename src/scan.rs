@@ -44,6 +44,15 @@ fn is_tarball(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
+#[inline]
+fn is_iso(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.ends_with(".iso"))
+        .unwrap_or(false)
+}
+
 /// Calculate the Sha256 checksum of the given stream
 pub fn sha256sum<R: Read>(mut reader: R) -> Result<String> {
     let mut hasher = Sha256::new();
@@ -66,11 +75,11 @@ pub fn calculate_decompressed_size<R: Read>(reader: R) -> Result<u64> {
     Ok(decompress.total_out())
 }
 
-pub fn collect_files<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>> {
+fn collect_files<P: AsRef<Path>, F: Fn(&DirEntry) -> bool>(root: P, filter: F) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
-    for entry in WalkDir::new(root).contents_first(true).into_iter() {
+    for entry in WalkDir::new(root).into_iter() {
         if let Ok(entry) = entry {
-            if !is_tarball(&entry) {
+            if entry.file_type().is_file() && !filter(&entry) {
                 continue;
             }
             files.push(entry.into_path());
@@ -82,10 +91,19 @@ pub fn collect_files<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
+pub fn collect_tarballs<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>> {
+    collect_files(root, is_tarball)
+}
+
+pub fn collect_iso<P: AsRef<Path>>(root: P) -> Result<Vec<PathBuf>> {
+    collect_files(root, is_iso)
+}
+
 pub fn increment_scan_files(
     files: Vec<PathBuf>,
     existing_files: Vec<Tarball>,
     root_path: &str,
+    raw: bool,
 ) -> Result<Vec<Tarball>> {
     let root_path_buf = PathBuf::from(root_path);
     let mut new_existing_files: Vec<Tarball> = Vec::new();
@@ -114,7 +132,7 @@ pub fn increment_scan_files(
         }
     }
     info!("Incrementally scanning {} tarballs...", new_files.len());
-    let diff_files = scan_files(&new_files, root_path)?;
+    let diff_files = scan_files(&new_files, root_path, raw)?;
     new_existing_files.extend(diff_files);
 
     Ok(new_existing_files)
@@ -164,15 +182,15 @@ pub fn smart_scan_files(
         warn!("Failed to read the previous manifest: {}", e);
         warn!("Falling back to full scan!");
         info!("Scanning {} tarballs...", files.len());
-        return scan_files(&files, root_path);
+        return scan_files(&files, root_path, false);
     }
     let manifest = manifest.unwrap();
     let existing_files = flatten_variants(manifest);
 
-    increment_scan_files(files, existing_files, root_path)
+    increment_scan_files(files, existing_files, root_path, false)
 }
 
-pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>> {
+pub fn scan_files(files: &[PathBuf], root_path: &str, raw: bool) -> Result<Vec<Tarball>> {
     let results: Vec<Tarball> = Vec::new();
     let results_shared = Arc::new(Mutex::new(results));
     files.par_iter().for_each(|p| {
@@ -198,7 +216,11 @@ pub fn scan_files(files: &[PathBuf], root_path: &str) -> Result<Vec<Tarball>> {
         let real_size = unwrap_or_show_error!(
             "Could not read as xz stream {}: {}",
             p.display(),
-            calculate_decompressed_size(&f)
+            if raw {
+                Ok(0)
+            } else {
+                calculate_decompressed_size(&f)
+            }
         );
         let inst_size: i64 = real_size.try_into().unwrap();
         let pos = unwrap_or_show_error!(
