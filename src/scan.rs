@@ -79,7 +79,7 @@ fn collect_files<P: AsRef<Path>, F: Fn(&DirEntry) -> bool>(root: P, filter: F) -
     let mut files = Vec::new();
     for entry in WalkDir::new(root).into_iter() {
         if let Ok(entry) = entry {
-            if entry.file_type().is_file() && !filter(&entry) {
+            if entry.file_type().is_dir() || !filter(&entry) {
                 continue;
             }
             files.push(entry.into_path());
