@@ -1,4 +1,8 @@
-# AOSC OS Tarball / Image Metadata Generator
+# Deprecation
+
+## This project has moved to https://github.com/AOSC-Dev/repokit/tree/master/repo-manifest.
+
+## AOSC OS Tarball / Image Metadata Generator
 
 This is the AOSC OS image metadata generator. It generates the image metadata for the tarballs in JSON format.
 The generated format is documented at https://app.swaggerhub.com/apis-docs/liushuyu/DeployKit/1.0#.
